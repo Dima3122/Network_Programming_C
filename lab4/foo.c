@@ -11,6 +11,23 @@ int Socket(int domain, int type, int protocol)
     return res;
 }
 
+void Getsockname(int sockfd, struct sockaddr *addr, socklen_t *len)
+{
+    if (getsockname(sockfd, (struct sockaddr *)addr, len) < 0)
+    {
+        perror("getsockname");
+        exit(SOCKET_GETSOCKNAME_ERROR);
+    }
+}
+
+void Select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, timeval *timeout)
+{
+    if (select(FD_SETSIZE, readfds, NULL, NULL, NULL) < 0)
+    {
+        perror("select");
+        exit(SELECT_ERROR);
+    }
+}
 void Bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     int res = bind(sockfd, addr, addrlen);

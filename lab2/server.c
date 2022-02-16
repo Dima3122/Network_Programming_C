@@ -26,12 +26,8 @@ int main()
     server_addr.sin_port = 0;
     Bind(sock_server, (struct sockaddr *)&server_addr, sizeof(server_addr));
     length = sizeof(server_addr);
-    if (getsockname(sock_server, (struct sockaddr *)&server_addr, &length) < 0)
-    {
-        perror("getsockname");
-        exit(3);
-    }
-    printf("SERVER: port number - %d\n", ntohs(server_addr.sin_port));
+    Getsockname(sock_server, (struct sockaddr *)&server_addr, &length);
+    printf("port number - %d\n", ntohs(server_addr.sin_port));
     Listen(sock_server, MAX_QUEUE);
     while (1)
     {
@@ -47,9 +43,9 @@ int main()
                 {
                     break;
                 }
-                printf("SERVER: Client address: %s:%d\n",
+                printf("Client address: %s:%d\n",
                 inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                printf("SERVER: Received n = %d\n", n);
+                printf("Received n = %d\n", n);
             }
             close(sock_client);
             exit(EXIT_SUCCESS);

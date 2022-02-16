@@ -1,5 +1,4 @@
 #include "foo.h"
-
 #define REPEAT 5
 
 int main(int argc, char *argv[])

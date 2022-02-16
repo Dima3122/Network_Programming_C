@@ -32,11 +32,11 @@ int main(int argc, char *argv[])
     client_addr.sin_port = 0;
     Bind(sock, (struct sockaddr *)&client_addr, sizeof(client_addr));
 
-    printf("CLIENT: Is ready for sending\n");
+    printf("Is ready for sending\n");
 
     memset(buf, 0, sizeof(char) * BUF_SIZE);
     strcpy(buf, argv[3]);
-    printf("CLIENT: Message to send: \"%s\"\n", buf);
+    printf("Message to send: \"%s\"\n", buf);
     if (sendto(sock, buf, strlen(buf), 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("sendto");

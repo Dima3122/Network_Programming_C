@@ -1,105 +1,64 @@
-#include <arpa/inet.h>
-#include <memory.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <algorithm>
-#include <sys/time.h>
-#include <fcntl.h>
-#include <set>
 #include "foo.h"
 
-using namespace std;
-
-#define MAX_QUEUE 10
+int receive_data(int fd, struct sockaddr_in client_addr)
+{
+    int bytes_read, n;
+    bytes_read = recv(fd, &n, sizeof(int), 0);
+    if (bytes_read < 0)
+    {
+        perror("recv");
+        exit(SOCKET_RECV_ERROR);
+    }
+    else if (bytes_read == 0)
+    {
+        return 1;
+    }
+    printf("Client address: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    printf("Received n = %d\n", n);
+    return 0;
+}
 
 int main()
 {
-    signal(SIGCHLD, SIG_IGN); // после завершения процессы не преобразовываются в зомби
-    int sock_server;
+    int sock_client, sock_server,fd;
     socklen_t length;
-    struct sockaddr_in server_addr;
-    int bytes_read = 0;
-    char buf[1024];
+    struct sockaddr_in server_addr, tmp_addr, client_addr[FD_SETSIZE];
+    fd_set readfds, activefds;
 
     sock_server = Socket(AF_INET, SOCK_STREAM, 0);
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = 0;
-    Bind(sock_server, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
+    Bind(sock_server, (struct sockaddr *)&server_addr, sizeof(server_addr)); 
     length = sizeof(server_addr);
-    if (getsockname(sock_server, (struct sockaddr *)&server_addr, &length) < 0)
-    {
-        perror("getsockname");
-        exit(3);
-    }
-    set<int> clients;
-    clients.clear();
-    printf("SERVER: port number - %d\n", ntohs(server_addr.sin_port)); //не работает дальше, такое ощущение что вообще дохнет
-    printf("я тут");
+    Getsockname(sock_server, (struct sockaddr *)&server_addr, &length);
+    printf("port number - %d\n", ntohs(server_addr.sin_port));
+    
     Listen(sock_server, MAX_QUEUE);
+    FD_ZERO(&activefds);
+    FD_SET(sock_server, &activefds);
     while (1)
     {
-        // Заполняем множество сокетов
-        fd_set readset;
-        FD_ZERO(&readset);
-        FD_SET(sock_server, &readset);
-
-        for (set<int>::iterator it = clients.begin(); it != clients.end(); it++)
+        memcpy(&readfds, &activefds, sizeof(readfds));
+        Select(FD_SETSIZE, &readfds, NULL, NULL, NULL); 
+        if (FD_ISSET(sock_server, &readfds))
         {
-            FD_SET(*it, &readset);
+            sock_client = Accept(sock_server, (struct sockaddr *)&tmp_addr, &length);
+            memcpy(&client_addr[sock_client], &tmp_addr, sizeof(client_addr));
+            FD_SET(sock_client, &activefds);
         }
 
-        // Задаём таймаут
-        timeval timeout;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
-
-        // Ждём события в одном из сокетов
-        int mx = max(sock_server, *max_element(clients.begin(), clients.end()));
-        if (select(mx + 1, &readset, NULL, NULL, &timeout) <= 0)
+        for (fd = 0; fd < FD_SETSIZE; fd++)
         {
-            perror("select");
-            exit(3);
-        }
-
-        // Определяем тип события и выполняем соответствующие действия
-        if (FD_ISSET(sock_server, &readset))
-        {
-            // Поступил новый запрос на соединение, используем accept
-            int sock = Accept(sock_server, NULL, NULL);
-            if (sock < 0)
+            if (fd != sock_server && FD_ISSET(fd, &readfds))
             {
-                perror("accept");
-                exit(3);
-            }
-
-            fcntl(sock, F_SETFL, O_NONBLOCK);
-
-            clients.insert(sock);
-        }
-
-        for (set<int>::iterator it = clients.begin(); it != clients.end(); it++)
-        {
-            if (FD_ISSET(*it, &readset))
-            {
-                // Поступили данные от клиента, читаем их
-                bytes_read = recv(*it, buf, 1024, 0);
-
-                if (bytes_read <= 0)
+                if (receive_data(fd, client_addr[fd]))
                 {
-                    // Соединение разорвано, удаляем сокет из множества
-                    close(*it);
-                    clients.erase(*it);
-                    continue;
+                    close(fd);
+                    FD_CLR(fd, &activefds);
+                    memset(&client_addr[fd], 0, sizeof(sizeof(struct sockaddr_in)));
                 }
-                printf("buf");
-                // Отправляем данные обратно клиенту
-                send(*it, buf, bytes_read, 0);
             }
         }
     }

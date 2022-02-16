@@ -69,13 +69,11 @@ void *process(void *inputData)
 
 int main()
 {
-    int sock_client, sock_server;
+    int sock_client, sock_server, status,fd;
     socklen_t length;
     struct sockaddr_in server_addr, client_addr;
     pthread_t thread;
     PthreadData data;
-    int status;
-    int fd;
 
     fd = open("data.txt", O_CREAT | O_EXCL | O_WRONLY, S_IRWXU);
     if (fd == -1)
@@ -98,11 +96,7 @@ int main()
 
     Bind(sock_server, (struct sockaddr *)&server_addr, sizeof(server_addr));
     length = sizeof(server_addr);
-    if (getsockname(sock_server, (struct sockaddr *)&server_addr, &length) < 0)
-    {
-        perror("getsockname");
-        exit(SOCKET_GETSOCKNAME_ERROR);
-    }
+    Getsockname(sock_server, (struct sockaddr *)&server_addr, &length);
     printf("port number - %d\n", ntohs(server_addr.sin_port));
     Listen(sock_server, MAX_QUEUE);
 
