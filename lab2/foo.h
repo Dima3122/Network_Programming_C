@@ -29,4 +29,4 @@ void Bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int Socket(int domain, int type, int protocol);
 void Getsockname(int sockfd, struct sockaddr *addr, socklen_t *len);
 
-void Select(int __nfds, fd_set *__restrict__ __readfds, fd_set *__restrict__ __writefds, fd_set *__restrict__ __exceptfds, timeval *__restrict__ __timeout);
+void Select(int __nfds, fd_set * __readfds, fd_set * __writefds, fd_set *__restrict__ __exceptfds, struct timeval * __timeout);

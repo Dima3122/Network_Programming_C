@@ -20,7 +20,7 @@ void Getsockname(int sockfd, struct sockaddr *addr, socklen_t *len)
     }
 }
 
-void Select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, timeval *timeout)
+void Select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
     if (select(FD_SETSIZE, readfds, NULL, NULL, NULL) < 0)
     {

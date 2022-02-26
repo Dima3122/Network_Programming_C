@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "foo.h"
+
 int main(int argc, char *argv[])
 {
     int sock;
